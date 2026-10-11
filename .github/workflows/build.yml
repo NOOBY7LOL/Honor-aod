@@ -21,11 +21,63 @@ jobs:
       - name: Accept Android SDK licenses
         run: |
           yes | sdkmanager --licenses > /dev/null 2>&1 || true
-          echo "ANDROID_HOME=$ANDROID_HOME"
 
       - uses: gradle/actions/setup-gradle@v3
         with:
           gradle-version: '8.5'
+
+      - name: Use fixed signing key (so updates install over the old app)
+        run: |
+          mkdir -p ~/.android
+          base64 -d > ~/.android/debug.keystore <<'KSEOF'
+          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
+          KSEOF
 
       - name: Create project files
         run: |
@@ -70,8 +122,8 @@ jobs:
                   minSdk 27
                   // targetSdk 29 keeps legacy storage access so the app can read /sdcard/AOD
                   targetSdk 29
-                  versionCode 1
-                  versionName "1.0"
+                  versionCode 2
+                  versionName "1.1"
               }
 
               compileOptions {
@@ -165,14 +217,21 @@ jobs:
 
           import java.io.BufferedReader;
           import java.io.File;
-          import java.io.FileReader;
+          import java.io.FileInputStream;
+          import java.io.InputStreamReader;
           import java.io.IOException;
           import java.util.HashMap;
           import java.util.Map;
 
           /**
            * Always-on display: dimmed image / GIF / video background with a One UI style
-           * stacked clock, date and battery. Shown over the lockscreen. Tap to close.
+           * stacked clock, date, battery and optional custom text. Shown over the lockscreen.
+           *
+           * Battery safety:
+           *  - closes itself after TIMEOUT seconds (default 10, 0 = never) with a fade-out
+           *  - KEEP_SCREEN_ON is removed as soon as it closes, so the system can turn the screen off
+           *  - always finishes when it is no longer visible (screen off), so it never lingers
+           *
            * Settings are read from /sdcard/AOD/config.conf.
            */
           public class AodActivity extends Activity {
@@ -184,6 +243,8 @@ jobs:
               private LinearLayout clockBox;
               private TextView batteryTv;
               private int driftStep = 0;
+              private boolean closing = false;
+              private int fadeMs = 700;
 
               private final Runnable drift = new Runnable() {
                   @Override
@@ -200,6 +261,15 @@ jobs:
                   }
               };
 
+              /** Timeout reached: tell the module "this was a timeout", then fade out and close. */
+              private final Runnable timeoutClose = new Runnable() {
+                  @Override
+                  public void run() {
+                      writeFlag("closed_timeout", true);
+                      closeWithFade();
+                  }
+              };
+
               private final BroadcastReceiver batteryReceiver = new BroadcastReceiver() {
                   @Override
                   public void onReceive(Context context, Intent intent) {
@@ -211,6 +281,7 @@ jobs:
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
                   readConfig();
+                  writeFlag("closed_timeout", false); // clear stale flag from an earlier run
 
                   setShowWhenLocked(true);
                   setTurnScreenOn(true);
@@ -228,6 +299,8 @@ jobs:
                   }
                   w.setAttributes(lp);
                   hideBars();
+
+                  fadeMs = "0".equals(get("FADE", "1")) ? 0 : clampi(geti("FADE_MS", 700), 100, 3000);
 
                   root = new FrameLayout(this);
                   root.setBackgroundColor(Color.BLACK);
@@ -249,15 +322,63 @@ jobs:
                   root.setOnClickListener(new View.OnClickListener() {
                       @Override
                       public void onClick(View v) {
-                          finish();
+                          // tap = user wants the lockscreen: close right away (no timeout flag)
+                          closeNow();
                       }
                   });
                   setContentView(root);
+
+                  // fade in
+                  if (fadeMs > 0) {
+                      root.setAlpha(0f);
+                      root.animate().alpha(1f).setDuration(fadeMs).start();
+                  }
 
                   Intent sticky = registerReceiver(batteryReceiver,
                           new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
                   if (sticky != null) updateBattery(sticky);
                   handler.postDelayed(drift, 60000);
+
+                  // auto close (battery saver). TIMEOUT=0 means "never".
+                  int timeout = geti("TIMEOUT", 10);
+                  if (timeout > 0) {
+                      handler.postDelayed(timeoutClose, timeout * 1000L);
+                  }
+              }
+
+              // ---------- closing ----------
+
+              private void releaseScreen() {
+                  // let the system turn the screen off again
+                  getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+              }
+
+              private void closeNow() {
+                  if (closing) return;
+                  closing = true;
+                  handler.removeCallbacksAndMessages(null);
+                  releaseScreen();
+                  finishAndRemoveTask();
+                  overridePendingTransition(0, 0);
+              }
+
+              private void closeWithFade() {
+                  if (closing) return;
+                  closing = true;
+                  handler.removeCallbacks(drift);
+                  releaseScreen();
+                  if (fadeMs > 0 && root != null) {
+                      root.animate().alpha(0f).setDuration(fadeMs).withEndAction(new Runnable() {
+                          @Override
+                          public void run() {
+                              finishAndRemoveTask();
+                              overridePendingTransition(0, 0);
+                          }
+                      }).start();
+                  } else {
+                      finishAndRemoveTask();
+                      overridePendingTransition(0, 0);
+                  }
               }
 
               // ---------- config ----------
@@ -265,7 +386,8 @@ jobs:
               private void readConfig() {
                   File f = new File(Environment.getExternalStorageDirectory(), "AOD/config.conf");
                   if (!f.exists()) return;
-                  try (BufferedReader br = new BufferedReader(new FileReader(f))) {
+                  try (BufferedReader br = new BufferedReader(
+                          new InputStreamReader(new FileInputStream(f), "UTF-8"))) {
                       String line;
                       while ((line = br.readLine()) != null) {
                           line = line.trim();
@@ -299,6 +421,10 @@ jobs:
                   }
               }
 
+              private static int clampi(int v, int lo, int hi) {
+                  return Math.max(lo, Math.min(hi, v));
+              }
+
               // ---------- media ----------
 
               private void loadMedia(String name) {
@@ -315,199 +441,4 @@ jobs:
                           vv.setVideoPath(f.getAbsolutePath());
                           vv.setOnPreparedListener(new android.media.MediaPlayer.OnPreparedListener() {
                               @Override
-                              public void onPrepared(android.media.MediaPlayer mp) {
-                                  mp.setLooping(true);
-                                  mp.setVolume(0f, 0f);
-                              }
-                          });
-                          vv.setOnErrorListener(new android.media.MediaPlayer.OnErrorListener() {
-                              @Override
-                              public boolean onError(android.media.MediaPlayer mp, int what, int extra) {
-                                  return true;
-                              }
-                          });
-                          FrameLayout.LayoutParams vlp = new FrameLayout.LayoutParams(
-                                  ViewGroup.LayoutParams.MATCH_PARENT,
-                                  ViewGroup.LayoutParams.MATCH_PARENT, Gravity.CENTER);
-                          root.addView(vv, vlp);
-                          vv.start();
-                          return;
-                      }
-
-                      ImageView iv = new ImageView(this);
-                      iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-                      if (Build.VERSION.SDK_INT >= 28) {
-                          final int screenW = dm.widthPixels;
-                          ImageDecoder.Source src = ImageDecoder.createSource(f);
-                          Drawable d = ImageDecoder.decodeDrawable(src,
-                                  new ImageDecoder.OnHeaderDecodedListener() {
-                                      @Override
-                                      public void onHeaderDecoded(ImageDecoder decoder,
-                                                                  ImageDecoder.ImageInfo info,
-                                                                  ImageDecoder.Source source) {
-                                          int s = Math.max(1, info.getSize().getWidth() / screenW);
-                                          decoder.setTargetSampleSize(s);
-                                      }
-                                  });
-                          iv.setImageDrawable(d);
-                          if (d instanceof AnimatedImageDrawable) {
-                              AnimatedImageDrawable a = (AnimatedImageDrawable) d;
-                              a.setRepeatCount(AnimatedImageDrawable.REPEAT_INFINITE);
-                              a.start();
-                          }
-                      } else {
-                          BitmapFactory.Options o = new BitmapFactory.Options();
-                          o.inSampleSize = 2;
-                          Bitmap bmp = BitmapFactory.decodeFile(f.getAbsolutePath(), o);
-                          if (bmp != null) iv.setImageBitmap(bmp);
-                      }
-                      root.addView(iv, new FrameLayout.LayoutParams(
-                              ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-                  } catch (Throwable t) {
-                      // bad file / out of memory: just show the clock on black
-                  }
-              }
-
-              // ---------- clock ----------
-
-              private void buildClock() {
-                  DisplayMetrics dm = getResources().getDisplayMetrics();
-                  float big = dm.widthPixels * 0.30f;
-                  boolean h24 = !"0".equals(get("H24", "1"));
-                  boolean showDate = !"0".equals(get("SHOWDATE", "1"));
-                  Typeface light = Typeface.create("sans-serif-light", Typeface.NORMAL);
-
-                  clockBox = new LinearLayout(this);
-                  clockBox.setOrientation(LinearLayout.VERTICAL);
-                  clockBox.setGravity(Gravity.CENTER_HORIZONTAL);
-
-                  if (showDate) {
-                      TextClock date = new TextClock(this);
-                      date.setFormat12Hour("EEE, MMM d");
-                      date.setFormat24Hour("EEE, MMM d");
-                      styleText(date, dm.widthPixels * 0.05f, Typeface.create("sans-serif-medium", Typeface.NORMAL));
-                      clockBox.addView(date, wrap(0));
-                  }
-
-                  TextClock hour = new TextClock(this);
-                  String hf = h24 ? "HH" : "h";
-                  hour.setFormat12Hour(hf);
-                  hour.setFormat24Hour(hf);
-                  styleText(hour, big, light);
-                  clockBox.addView(hour, wrap((int) (dm.density * 6)));
-
-                  TextClock min = new TextClock(this);
-                  min.setFormat12Hour("mm");
-                  min.setFormat24Hour("mm");
-                  styleText(min, big, light);
-                  clockBox.addView(min, wrap(-(int) (big * 0.14f)));
-
-                  batteryTv = new TextView(this);
-                  styleText(batteryTv, dm.widthPixels * 0.045f, Typeface.create("sans-serif", Typeface.NORMAL));
-                  clockBox.addView(batteryTv, wrap((int) (dm.density * 18)));
-
-                  root.addView(clockBox, new FrameLayout.LayoutParams(
-                          ViewGroup.LayoutParams.MATCH_PARENT,
-                          ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
-              }
-
-              private LinearLayout.LayoutParams wrap(int topMargin) {
-                  LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(
-                          ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-                  p.topMargin = topMargin;
-                  p.gravity = Gravity.CENTER_HORIZONTAL;
-                  return p;
-              }
-
-              private void styleText(TextView tv, float sizePx, Typeface face) {
-                  tv.setTextColor(Color.WHITE);
-                  tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, sizePx);
-                  tv.setTypeface(face);
-                  tv.setIncludeFontPadding(false);
-                  tv.setGravity(Gravity.CENTER);
-                  tv.setShadowLayer(12f, 0f, 0f, Color.BLACK);
-              }
-
-              private void updateBattery(Intent i) {
-                  if (batteryTv == null || i == null) return;
-                  int level = i.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
-                  int scale = i.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
-                  int status = i.getIntExtra(BatteryManager.EXTRA_STATUS, -1);
-                  boolean charging = status == BatteryManager.BATTERY_STATUS_CHARGING
-                          || status == BatteryManager.BATTERY_STATUS_FULL;
-                  if (level < 0 || scale <= 0) return;
-                  int pct = Math.round(level * 100f / scale);
-                  batteryTv.setText(pct + "%" + (charging ? "  ⚡" : ""));
-              }
-
-              // ---------- window / lifecycle ----------
-
-              private void hideBars() {
-                  getWindow().getDecorView().setSystemUiVisibility(
-                          View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                  | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                  | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                  | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                  | View.SYSTEM_UI_FLAG_FULLSCREEN
-                                  | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-              }
-
-              @Override
-              public void onWindowFocusChanged(boolean hasFocus) {
-                  super.onWindowFocusChanged(hasFocus);
-                  if (hasFocus) hideBars();
-              }
-
-              /** Marker file the module reads to know the AOD is visible. */
-              private File marker() {
-                  File d = getExternalFilesDir(null);
-                  return d == null ? null : new File(d, "active");
-              }
-
-              @Override
-              protected void onResume() {
-                  super.onResume();
-                  File m = marker();
-                  if (m != null) {
-                      try {
-                          m.getParentFile().mkdirs();
-                          m.createNewFile();
-                      } catch (IOException ignored) {
-                      }
-                  }
-              }
-
-              @Override
-              protected void onPause() {
-                  File m = marker();
-                  if (m != null) m.delete();
-                  super.onPause();
-              }
-
-              @Override
-              protected void onDestroy() {
-                  handler.removeCallbacksAndMessages(null);
-                  try {
-                      unregisterReceiver(batteryReceiver);
-                  } catch (Exception ignored) {
-                  }
-                  super.onDestroy();
-              }
-          }
-          AODEOF
-
-      - name: Build APK
-        run: gradle assembleDebug --no-daemon --stacktrace
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: HonorAOD-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Publish APK as a release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: Honor AOD app (build ${{ github.run_number }})
-          files: app/build/outputs/apk/debug/app-debug.apk
+                              public void onPrepared(android.med
