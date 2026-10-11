@@ -18,7 +18,10 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses
+        run: |
+          yes | sdkmanager --licenses > /dev/null 2>&1 || true
+          echo "ANDROID_HOME=$ANDROID_HOME"
 
       - uses: gradle/actions/setup-gradle@v3
         with:
@@ -76,7 +79,7 @@ jobs:
                   targetCompatibility JavaVersion.VERSION_1_8
               }
 
-              lintOptions {
+              lint {
                   abortOnError false
                   checkReleaseBuilds false
               }
@@ -455,4 +458,56 @@ jobs:
                   if (hasFocus) hideBars();
               }
 
-              /** Marker file the module reads to k
+              /** Marker file the module reads to know the AOD is visible. */
+              private File marker() {
+                  File d = getExternalFilesDir(null);
+                  return d == null ? null : new File(d, "active");
+              }
+
+              @Override
+              protected void onResume() {
+                  super.onResume();
+                  File m = marker();
+                  if (m != null) {
+                      try {
+                          m.getParentFile().mkdirs();
+                          m.createNewFile();
+                      } catch (IOException ignored) {
+                      }
+                  }
+              }
+
+              @Override
+              protected void onPause() {
+                  File m = marker();
+                  if (m != null) m.delete();
+                  super.onPause();
+              }
+
+              @Override
+              protected void onDestroy() {
+                  handler.removeCallbacksAndMessages(null);
+                  try {
+                      unregisterReceiver(batteryReceiver);
+                  } catch (Exception ignored) {
+                  }
+                  super.onDestroy();
+              }
+          }
+          AODEOF
+
+      - name: Build APK
+        run: gradle assembleDebug --no-daemon --stacktrace
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: HonorAOD-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Publish APK as a release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: Honor AOD app (build ${{ github.run_number }})
+          files: app/build/outputs/apk/debug/app-debug.apk
