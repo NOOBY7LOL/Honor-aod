@@ -122,8 +122,8 @@ jobs:
                   minSdk 27
                   // targetSdk 29 keeps legacy storage access so the app can read /sdcard/AOD
                   targetSdk 29
-                  versionCode 5
-                  versionName "1.4"
+                  versionCode 6
+                  versionName "1.5"
               }
 
               compileOptions {
@@ -247,6 +247,12 @@ jobs:
           import android.os.Environment;
           import android.os.Handler;
           import android.os.Looper;
+          import android.os.PowerManager;
+          import android.app.KeyguardManager;
+          import java.io.FileWriter;
+          import java.text.SimpleDateFormat;
+          import java.util.Date;
+          import java.util.Locale;
           import android.util.DisplayMetrics;
           import android.util.TypedValue;
           import android.view.Gravity;
@@ -291,6 +297,7 @@ jobs:
               private int driftStep = 0;
               private boolean closing = false;
               private int fadeMs = 700;
+              private PowerManager.WakeLock wakeLock;
 
               private final Runnable drift = new Runnable() {
                   @Override
@@ -336,6 +343,16 @@ jobs:
                   super.onCreate(savedInstanceState);
                   overridePendingTransition(0, 0); // no system open animation: only our own fade
                   readConfig();
+                  log("onCreate " + state());
+                  // Wake the screen straight away (faster than the window flag alone), released on close.
+                  try {
+                      PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                      wakeLock = pm.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK
+                              | PowerManager.ACQUIRE_CAUSES_WAKEUP, "honoraod:aod");
+                      wakeLock.acquire((geti("TIMEOUT", 10) + 15) * 1000L);
+                  } catch (Throwable t) {
+                      log("wakelock failed " + t);
+                  }
                   writeFlag("closed_timeout", false); // clear stale flag from an earlier run
 
                   setShowWhenLocked(true);
@@ -404,11 +421,16 @@ jobs:
               // ---------- closing ----------
 
               private void releaseScreen() {
+                  try {
+                      if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+                  } catch (Throwable ignored) {
+                  }
                   // let the system turn the screen off again
                   getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
               }
 
               private void closeNow() {
+                  log("tap -> close");
                   if (closing) return;
                   closing = true;
                   handler.removeCallbacksAndMessages(null);
@@ -424,6 +446,7 @@ jobs:
                * activity go away (onStop). The window itself is opaque black, so nothing shows through.
                */
               private void fadeToBlackAndWaitForScreenOff() {
+                  log("timeout -> fade to black");
                   if (closing) return;
                   closing = true;
                   handler.removeCallbacks(drift);
@@ -663,6 +686,7 @@ jobs:
               @Override
               public void onWindowFocusChanged(boolean hasFocus) {
                   super.onWindowFocusChanged(hasFocus);
+                  log("focus=" + hasFocus + " " + state());
                   if (hasFocus) hideBars();
               }
 
@@ -687,20 +711,56 @@ jobs:
               }
 
               @Override
+              protected void onNewIntent(Intent intent) {
+                  super.onNewIntent(intent);
+                  log("onNewIntent closing=" + closing + " " + state());
+              }
+
+              @Override
               protected void onResume() {
                   super.onResume();
                   writeFlag("active", true);
+                  log("onResume " + state());
               }
 
               @Override
               protected void onPause() {
                   writeFlag("active", false);
+                  log("onPause " + state());
                   super.onPause();
+              }
+
+              /** Own small event log: /sdcard/Android/data/com.honoraod/files/app.log */
+              private String state() {
+                  String k = "?", i = "?";
+                  try {
+                      KeyguardManager km = (KeyguardManager) getSystemService(Context.KEYGUARD_SERVICE);
+                      k = km.isKeyguardLocked() ? "locked" : "unlocked";
+                      PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
+                      i = pm.isInteractive() ? "screen-on" : "screen-off";
+                  } catch (Throwable ignored) {
+                  }
+                  return "[" + k + "," + i + "]";
+              }
+
+              private void log(String msg) {
+                  File f = flagFile("app.log");
+                  if (f == null) return;
+                  try {
+                      f.getParentFile().mkdirs();
+                      if (f.length() > 20000) f.delete();
+                      FileWriter w = new FileWriter(f, true);
+                      w.write(new SimpleDateFormat("HH:mm:ss.SSS", Locale.US).format(new Date())
+                              + " " + msg + "\n");
+                      w.close();
+                  } catch (Throwable ignored) {
+                  }
               }
 
               /** Not visible any more (screen off / user left): never linger in the background. */
               @Override
               protected void onStop() {
+                  log("onStop finishing=" + isFinishing() + " " + state());
                   closing = true;
                   handler.removeCallbacksAndMessages(null);
                   if (!isFinishing()) {
@@ -711,6 +771,11 @@ jobs:
 
               @Override
               protected void onDestroy() {
+                  log("onDestroy");
+                  try {
+                      if (wakeLock != null && wakeLock.isHeld()) wakeLock.release();
+                  } catch (Throwable ignored) {
+                  }
                   handler.removeCallbacksAndMessages(null);
                   writeFlag("active", false);
                   try {
@@ -737,4 +802,3 @@ jobs:
           tag_name: build-${{ github.run_number }}
           name: Honor AOD app (build ${{ github.run_number }})
           files: app/build/outputs/apk/debug/app-debug.apk
-
